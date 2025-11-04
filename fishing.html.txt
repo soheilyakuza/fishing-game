@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fishing Mini - FarmRPG Style</title>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      background: #f9f9f9;
+      color: #333;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      border: 1px solid #ddd;
+      background-image: linear-gradient(to bottom, #e0f7fa, #f9f9f9);
+    }
+    h1 {
+      text-align: center;
+      color: #00695c;
+    }
+    .stats {
+      background: #e0f2f1;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border: 1px solid #b2dfdb;
+    }
+    button {
+      display: block;
+      width: 200px;
+      margin: 20px auto;
+      padding: 12px;
+      font-family: inherit;
+      font-size: 18px;
+      background: #00796b;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #004d40;
+    }
+    #result {
+      text-align: center;
+      font-size: 20px;
+      margin: 20px 0;
+      min-height: 30px;
+    }
+    .rare {
+      color: #d32f2f;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎣 Fishing System (Test)</h1>
+
+  <div class="stats">
+    <p><strong>Level:</strong> <span id="level">1</span></p>
+    <p><strong>Total Fish:</strong> <span id="total">0</span></p>
+    <p><strong>Last Catch:</strong> <span id="last">-</span></p>
+  </div>
+
+  <button id="fishBtn">Go Fishing!</button>
+  <div id="result"></div>
+
+  <script>
+    // داده‌های ماهی‌ها
+    const fishTypes = [
+      { name: "Minnow", chance: 50, rare: false },
+      { name: "Bass", chance: 30, rare: false },
+      { name: "Trout", chance: 15, rare: false },
+      { name: "Golden Carp", chance: 4, rare: true },
+      { name: "Legendary Piranha", chance: 1, rare: true }
+    ];
+
+    // محاسبه شانس کل
+    const totalChance = fishTypes.reduce((sum, f) => sum + f.chance, 0);
+
+    // بارگذاری داده از localStorage
+    let gameData = JSON.parse(localStorage.getItem('fishingGame')) || {
+      level: 1,
+      totalFish: 0
+    };
+
+    // ذخیره خودکار
+    function save() {
+      localStorage.setItem('fishingGame', JSON.stringify(gameData));
+      updateUI();
+    }
+
+    // بروزرسانی رابط
+    function updateUI() {
+      document.getElementById('level').textContent = gameData.level;
+      document.getElementById('total').textContent = gameData.totalFish;
+    }
+
+    // ماهی‌گیری!
+    function goFishing() {
+      const resultEl = document.getElementById('result');
+      resultEl.innerHTML = "🎣 Reeling in...";
+
+      // تأخیر کوچک برای حس تعامل
+      setTimeout(() => {
+        // هر سطح، شانس نادر را 1% افزایش می‌دهد (ساده‌شده)
+        const rareBonus = (gameData.level - 1) * 1;
+        let rand = Math.random() * totalChance;
+        let cumulative = 0;
+        let caught = null;
+
+        for (const fish of fishTypes) {
+          let effectiveChance = fish.chance;
+          if (fish.rare) {
+            effectiveChance = Math.min(fish.chance + rareBonus, fish.chance * 3); // حداکثر 3x
+          }
+          cumulative += effectiveChance;
+          if (rand < cumulative) {
+            caught = fish;
+            break;
+          }
+        }
+
+        // اگر چیزی پیدا نشد (احتمال کم)، Minnow بده
+        if (!caught) caught = fishTypes[0];
+
+        gameData.totalFish++;
+        // هر 10 ماهی = 1 سطح
+        gameData.level = Math.floor(gameData.totalFish / 10) + 1;
+
+        // نمایش نتیجه
+        let display = caught.name;
+        if (caught.rare) {
+          display = `<span class="rare">✨ ${display} ✨</span>`;
+        }
+        resultEl.innerHTML = `You caught: ${display}`;
+
+        // ذخیره
+        save();
+      }, 600);
+    }
+
+    // متصل کردن دکمه
+    document.getElementById('fishBtn').addEventListener('click', goFishing);
+
+    // بارگذاری اولیه
+    updateUI();
+  </script>
+</body>
+</html>
